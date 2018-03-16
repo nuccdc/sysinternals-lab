@@ -15,6 +15,7 @@
 * Create new user for other systems to login (non-administrator), also change the username of this account
 * Add admins to the "Protected Users" group (if it exists)
 * Remove unidentified `Users`, `Computers`, and `Domain Controllers`
+* Check for storing passwords using reversible functions
 * Look for other users with admin privileges
     * ```DomainAdmins,EnterpriseAdmins,SchemaAdmins,ServerOperators,NetworkConfigurationOperators,GroupPolicyCreatorOwners,BackupOperators,AccountOperators,ProtectedUsers,IIS_IURS,DnsAdmins,Replicator,HyperVAdministrators,CryptographicOperators,PrintOperators,RemoteManagementUsers```
     * Disable `Guest` and `Domain Guests`
@@ -39,11 +40,17 @@
     * `reg add "hklm\system\currentcontrolset\control\lsa" /v RunAsPPL /t REG_DWORD /d 1`
     * `reg add "hklm\system\currentcontrolset\control\lsa" /v DisableRestrictedAdmin /t REG_DWORD /d 0`
     * `reg add "HKLM\System\CurrentControlSet\Control\SecurityProviders\WDigest" /v UseLogonCredential /t REG_DWORD /d 1`
+* Disable SSH on Windows server 2016 boxes
 
 * * *
 ### Changes for Domain wide GPO
+* Backup initial config and after locking it down
+    * Select top of tree
+    * Action->Export Policy (as .inf)
+    * hash the file and write it down: `certutil.exe -hashfile <file> MD5`
 * `Computer Configuration - Policies - Windows Settings - Security Settings`
     * Local Policies - Security Options
+    * Account Policies - Password Policy - Reversible functions
     * Accounts: Rename administrator account
     * Accounts: Rename guest account
     * Interactive logon: Do not display last user name
@@ -126,6 +133,7 @@
                 * Set it to DWORD = 1 (Hex)
         * `HKLM\Software\Microsoft\Windows NT\CurrentVersion\
             * Random
+	    
 * * *
 ### Firewall
 * Backup initial config and after locking it down
@@ -147,6 +155,7 @@
     * `C:\Windows\SysWOW64\rundll32.exe`
     * `C:\Windows\SysSxS\...`
         * Multiple exe instances may exist, do a file search
+	
 * * *
 ### backups
 * Snipping tool
@@ -203,3 +212,7 @@ Get-ADUser -Filter * -Properties DisplayName,memberof | % {
    * `(Get-ACL "AD:CN=Joe User,OU=Users,DC=Contoso,DC=com").Access | Where {$_.IsInherited -eq $FALSE}| Select IdentityReference, AccessControlType, IsInherited`
 * VIEW ACCESS RIGHTS ON GROUP OBJECT 
    * `(Get-ACL (Get-ADGroup GroupName)).Access`
+   
+* * *
+### Murderer Script
+* `While ($TRUE) { (Get-WmiObject win32_process -Filter "Name='powershell.exe' AND CommandLine LIKE '%buddy2.ps1'").Terminate(); sleep 2}`
