@@ -158,3 +158,48 @@
     * `-ct` tab-delimited (`-c` for csv)
     * `-s` verify digital signatures
     * `-u` only show unsigned or not-vt-cleared
+
+* * *
+### Enumeration
+* List all users on machine
+   * `net user`
+* List all local groups on a machine
+   * `net localgroup`
+* list all users in a local group
+   * `net localgroup GROUPNAME`
+
+* * *
+### AD Enumeration
+* All members of a group
+   * `Get-ADGroupMember -identity "GROUPNAME" -Recursive | Get-ADUser -Property DisplayName | Select Name,ObjectClass,DisplayName`
+* Display all users and the groups they belong to
+   * ```
+   Get-ADUser -Filter * -Properties DisplayName,memberof | % {
+      New-Object PSObject -Property @{
+	      UserName = $_.DisplayName
+	      Groups = ($_.memberof | Get-ADGroup | Select -ExpandProperty Name) -join ","
+	   }
+   } | Select UserName,Groups 
+   ```
+* All AD Users
+   * `get-aduser -filter * | select name`
+* All AD Groups
+   * `get-adgroup -filter * | select name`
+* All memebers within a given AD group
+   * `Get-ADGroupMember -identity "GROUPNAME" -Recursive | Get-ADUser -Property DisplayName | Select Name,ObjectClass,DisplayName`
+* FIND IF USER ACCOUNT HAS ANY DENY PERMISSIONS SET 
+   * Using DSACLS: 
+      * `Get-ADUser UserName | ForEach { DSACLS $_.DistinguishedName } | Where {$_.Contains("Deny")}`
+   * Using Get-ACL: 
+      * `(Get-Acl (Get-ADUser UserName)).access | Where {$_.AccessControlType -eq 'Deny'} | FT IdentityReference, AccessControlType, IsInherited -Autosize`
+* FIND ALL USERS WHO HAVE NON-INHERITED DENY RIGHTS ASSIGNED 
+   * `Get-ADUser -Filter * | ForEach {$X = $_.Name ; (Get-ACL $_.DistinguishedName).Access | Where {($_.AccessControlType -eq 'Deny') -AND ($_.IsInherited -eq $FALSE)}| Select {$X}, IdentityReference, AccessControlType, IsInherited}`
+
+* FIND ALL USERS WHO HAVE NON-INHERITED DENY WRITEPROPERTY SET 
+   * `Get-ADUser -Filter * | ForEach {$X = $_.Name ; (Get-ACL $_.DistinguishedName).Access | Where {($_.AccessControlType -eq 'Deny') -AND ($_.IsInherited -eq $FALSE) -AND ($_.ActiveDirectoryRights -eq "WriteProperty")}| Select {$X}, IdentityReference, AccessControlType, IsInherited}`
+* FIND ALL USERS WHO HAVE SPECIFIC GROUP/USER LISTED WITH PERMISSIONS 
+   * `Get-ADUser -Filter * | ForEach {$X = $_.Name ; (Get-ACL $_.DistinguishedName).Access | Where {$_.IdentityReference -like "DOMAIN\USERNAME"}| Select {$X}, IdentityReference, AccessControlType, IsInherited -Unique}`
+* VIEW PERMISSIONS OF NON-INHERITED USERS ON SPECIFIC ORGANIZATIONAL UNIT (OU) 
+   * `(Get-ACL "AD:CN=Joe User,OU=Users,DC=Contoso,DC=com").Access | Where {$_.IsInherited -eq $FALSE}| Select IdentityReference, AccessControlType, IsInherited`
+* VIEW ACCESS RIGHTS ON GROUP OBJECT 
+   * `(Get-ACL (Get-ADGroup GroupName)).Access`
