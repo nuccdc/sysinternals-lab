@@ -173,14 +173,14 @@
 * All members of a group
    * `Get-ADGroupMember -identity "GROUPNAME" -Recursive | Get-ADUser -Property DisplayName | Select Name,ObjectClass,DisplayName`
 * Display all users and the groups they belong to
-   * ```
+```
    Get-ADUser -Filter * -Properties DisplayName,memberof | % {
       New-Object PSObject -Property @{
 	      UserName = $_.DisplayName
 	      Groups = ($_.memberof | Get-ADGroup | Select -ExpandProperty Name) -join ","
 	   }
    } | Select UserName,Groups 
-   ```
+```
 * All AD Users
    * `get-aduser -filter * | select name`
 * All AD Groups
